@@ -39,6 +39,36 @@ struct State {
 }
 
 
+impl State {
+    fn new(a: i32, b: i32, c: i32, d: i32) -> State {
+        State {
+            a: a,
+            b: b,
+            c: c,
+            d: d
+        }
+    }
+    
+    fn read(&self, reg: Register) -> i32 {
+        match reg {
+            Register::A => self.a,
+            Register::B => self.b,
+            Register::C => self.c,
+            Register::D => self.d
+        }
+    }
+
+    fn write(&mut self, reg: Register, val: i32) {
+        match reg {
+            Register::A => self.a = val,
+            Register::B => self.b = val,
+            Register::C => self.c = val,
+            Register::D => self.d = val
+        }
+    }
+}
+
+
 fn parse_arg(arg_str: &str) -> Arg {
     match arg_str {
         "a" => Arg::Reg(Register::A),
@@ -88,30 +118,9 @@ fn parse_prog(source: String) -> Program {
 }
 
 
-fn write_register(state: &mut State, reg: Register, val: i32) {
-    match reg {
-        Register::A => state.a = val,
-        Register::B => state.b = val,
-        Register::C => state.c = val,
-        Register::D => state.d = val
-    }
-}
-
-
-fn read_register(state: &State, reg: Register) -> i32 {
-    match reg {
-        Register::A => state.a,
-        Register::B => state.b,
-        Register::C => state.c,
-        Register::D => state.d
-    }
-}
-
-
 fn execute_program<'a>(prog: &Program, state: &'a mut State) -> &'a mut State {
     let mut line = 0;
     while let Some(instr) = prog.instructions.get(line) {
-        println!("{:?}", instr);
         match instr.op {
             Op::Cpy => {
                 let dst = match instr.rhs {
@@ -120,10 +129,10 @@ fn execute_program<'a>(prog: &Program, state: &'a mut State) -> &'a mut State {
                 };
                 match instr.lhs {
                     Arg::Reg(src) => {
-                        let val = read_register(state, src);
-                        write_register(state, dst, val);
+                        let val = state.read(src);
+                        state.write(dst, val);
                     },
-                    Arg::Literal(x) => write_register(state, dst, x)
+                    Arg::Literal(x) => state.write(dst, x)
                 };
             },
             op @ Op::Inc |
@@ -132,13 +141,13 @@ fn execute_program<'a>(prog: &Program, state: &'a mut State) -> &'a mut State {
                     Arg::Reg(r) => r,
                     _ => panic!()
                 };
-                let val = read_register(state, src);
-                write_register(state, src, val + if op == Op::Inc { 1 } else { -1 });
+                let val = state.read(src);
+                state.write(src, val + if op == Op::Inc { 1 } else { -1 });
             },
             Op::Jnz => {
                 let cond = match instr.lhs {
                     Arg::Literal(x) => x,
-                    Arg::Reg(r) => read_register(state, r)
+                    Arg::Reg(r) => state.read(r)
                 };
                 if cond != 0 {
                     match instr.rhs {
@@ -151,7 +160,6 @@ fn execute_program<'a>(prog: &Program, state: &'a mut State) -> &'a mut State {
                 };
             }
         }
-        println!("{:?}", state);
         line += 1;
     }
     state
@@ -164,15 +172,12 @@ fn main() {
     f.read_to_string(&mut s).unwrap();
 
     let prog: Program = parse_prog(s);
-    for i in &prog.instructions {
-        println!("{:?}", i);
-    }
 
-    let mut state = State {
-        a: 0,
-        b: 0,
-        c: 0,
-        d: 0
-    };
-    println!("final state: {:?}", execute_program(&prog, &mut state));
+    // Part 1
+    let mut state = State::new(0, 0, 0, 0);
+    println!("final state (part 1): {:?}", execute_program(&prog, &mut state));
+
+    // Part 2
+    state = State::new(0, 0, 1, 0);
+    println!("final state (part 2): {:?}", execute_program(&prog, &mut state));
 }
