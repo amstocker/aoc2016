@@ -80,7 +80,7 @@ fn parse_arg(arg_str: &str) -> Arg {
 }
 
 
-fn parse_instr(lineno: usize, line: &str) -> Instruction {
+fn parse_instr((lineno, line): (usize, &str)) -> Instruction {
     let tokens: Vec<&str> = line.split_whitespace().collect();
     Instruction {
         lineno: lineno,
@@ -107,13 +107,11 @@ fn parse_instr(lineno: usize, line: &str) -> Instruction {
 
 
 fn parse_prog(source: String) -> Program {
-    let instructions: Vec<Instruction> = source
-        .lines()
-        .enumerate()
-        .map(|(n, l)| parse_instr(n, l))
-        .collect();
     Program {
-        instructions: instructions,
+        instructions: source.lines()
+            .enumerate()
+            .map(parse_instr)
+            .collect(),
     }
 }
 
@@ -171,7 +169,7 @@ fn main() {
     let mut s = String::new();
     f.read_to_string(&mut s).unwrap();
 
-    let prog: Program = parse_prog(s);
+    let prog = parse_prog(s);
 
     // Part 1
     let mut state = State::new(0, 0, 0, 0);
