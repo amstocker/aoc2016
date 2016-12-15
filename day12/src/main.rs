@@ -111,7 +111,7 @@ fn parse_prog(source: String) -> Program {
         instructions: source.lines()
             .enumerate()
             .map(parse_instr)
-            .collect(),
+            .collect()
     }
 }
 
